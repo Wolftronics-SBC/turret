@@ -14,140 +14,156 @@
 #include <atlbase.h>
 #include <atlconv.h>
 
+#include <math.h>
 
 using namespace std;
 char key;
 
-int _tmain(int argc, _TCHAR* argv[])
-{
-	/*cv::Mat img = cv::imread("D:/1.jpg", CV_LOAD_IMAGE_COLOR);
-
-	if(! img.data )                              // Check for invalid input
-    {
-        return -1;
+char* itoa(int i, char b[]){
+    char const digit[] = "0123456789";
+    char* p = b;
+    if(i<0){
+        *p++ = '-';
+        i *= -1;
     }
+    int shifter = i;
+    do{ //Move to where representation ends
+        ++p;
+        shifter = shifter/10;
+    }while(shifter);
+    *p = '\0';
+    do{ //Move back, inserting digits as u go
+        *--p = digit[i%10];
+        i = i/10;
+    }while(i);
+    return b;
+}
 
-	cv::namedWindow( "Display window", CV_WINDOW_AUTOSIZE );// Create a window for display.
-    cv::imshow( "Display window", img );                   // Show our image inside it.
+char* myitoa(int i, char b[], int l){
+    char const digit[] = "0123456789";
+    char* p = b;
+	
+	for (int j = 0; j < l; j++) {
+		++p;
+	}
+	
+    *p = '\0';
+	for (int j = 0; j < l; j++) {
+		if (i % 10 != 0) {
+			*--p = digit[i % 10];
+			i = i / 10;	
+		} else {
+			*--p = digit[0];
+		}
+	}
 
-    cv::waitKey(0);                                          // Wait for a keystroke in the window
-    
-	return 0;*/
+    return b;
+}
 
+// application reads from the specified serial port and reports the collected data
+int _tmain(int argc, _TCHAR* argv[])
+{	
+	//Arduino
+
+	printf("Welcome to the serial test app!\n\n");
+
+	Serial* SP = new Serial("\\\\.\\COM10");    // adjust as needed
+
+	if (SP->IsConnected())
+		printf("We're connected");
+
+	char incomingData[256] = "";			// don't forget to pre-allocate memory
+	//printf("%s\n",incomingData);
+	int dataLength = 256;
+	int readResult = 0;
+
+
+	bool isTesting = true;
+
+	//CV
 	cvNamedWindow("Camera_Output", 1);    //Create window
-	//cvNamedWindow("Camera_Output2", 2);    //Create window
     CvCapture* capture = cvCaptureFromCAM(CV_CAP_ANY);  //Capture using any camera connected to your system
-    while(1){ //Create infinte loop for live streaming
- 
-        IplImage* frame = cvQueryFrame(capture); //Create image frames from capture
 
+
+	while(SP->IsConnected())
+	{
+		//Arduino
+
+		readResult = SP->ReadData(incomingData, dataLength);
+		//printf("Bytes read: (-1 means no data available) %i\n",readResult);
+		std::string test(incomingData);
+		//printf("%s",incomingData);
+		if (test != "") {//my
+			//printf("Bytes read: (-1 means no data available) %i\n",readResult);
+			
+			//printf("%s", test);//
+		}//
+		test = "";
+		Sleep(20); //20 or 500
+
+		//CV
+		IplImage* frame = cvQueryFrame(capture); //Create image frames from capture
 		cv::Mat mat(frame); 
-
 		cv::Mat binpic = cv::Mat::zeros(mat.rows, mat.cols, CV_32F);//binary pic
 
-		cv::MatIterator_<cv::Vec3b> it, end;
-		int i = 0;
-		//for (it = mat.begin<cv::Vec3b>(), end = mat.end<cv::Vec3b>(); it != end; ++it) {
-		for(int i=0; i < mat.rows; i++) {
-			for(int j=0; j< mat.cols; j++) {
-				/*mat.at<cv::Vec3b>(i,j)[0];
-				mat.at<cv::Vec3b>(i,j)[1];
-				mat.at<cv::Vec3b>(i,j)[2];*/
-
-				//binpic.at<uchar>(i,j)[0] = 0;
-			//if (((*it)[0] < 50) && ((*it)[1] < 50) && ((*it)[2] < 50)) {//bgr
-			//if ((*it)[2] > 240) {//bgr
-
-
-			/*if (((*it)[0] < 200) && 
-				((*it)[0] > 150) && 
-				((*it)[1] < 200) && 
-				((*it)[1] > 150) && 
-				((*it)[2] > 200)) {//bgr*/
-
-
-			/*if (((*it)[0] > 230) && 
-				((*it)[1] > 230) && 
-				((*it)[2] > 230)) {*/
-			if ((mat.at<cv::Vec3b>(i,j)[0] > 230) && 
-				(mat.at<cv::Vec3b>(i,j)[1] > 230) && 
-				(mat.at<cv::Vec3b>(i,j)[2] > 230)) {
-
-					//mat.data[i*mat.cols + j] = 
-					//binpic.data[i*mat.cols + j] = 0;
-
-					//binpic.at<float>(i % binpic.cols, i / binpic.rows) = 1;
-					//binpic.at<float>(i / binpic.rows, i % binpic.cols) = 1;
-					//binpic.at<float>(i % binpic.rows, i / binpic.cols) = 1;
-				/*(*it)[0] = 255;
-				(*it)[1] = 255;
-				(*it)[2] = 255;*/
-
-				/*mat.at<cv::Vec3b>(i,j)[0] = 0;
-				mat.at<cv::Vec3b>(i,j)[1] = 255;
-				mat.at<cv::Vec3b>(i,j)[2] = 0;*/
-
-				/*	mat.at<cv::Vec3b>(i,j)[0] = 0;
-				mat.at<cv::Vec3b>(i,j)[1] = 0;
-				mat.at<cv::Vec3b>(i,j)[2] = 0;*/
-			} else {
-				//binpic.at<float>(i / binpic.rows, i % binpic.cols) = 0;
-				/*(*it)[0] = 0;
-				(*it)[1] = 0;
-				(*it)[2] = 0;*/
-			}
-			i++;
-			}
+		int x = 0;
+		int y = 0;
+		for(int i = 0; i < mat.rows; i++) {
+			for(int j = 0; j < mat.cols; j++) {
+				if ((mat.at<cv::Vec3b>(i,j)[0] > 150) && (mat.at<cv::Vec3b>(i,j)[0] < 250) &&
+					(mat.at<cv::Vec3b>(i,j)[1] > 170) && (mat.at<cv::Vec3b>(i,j)[1] < 250) && 
+					(mat.at<cv::Vec3b>(i,j)[2] > 218) && (mat.at<cv::Vec3b>(i,j)[2] <= 255)) {
+						binpic.at<float>(i,j) = 255;
+						x = j - mat.cols / 2;
+						y = i - mat.rows / 2;
+				}
+			} 
 		}
 
+		//int anglex = x * 68.27 / 640;
+		//int anglex = 2048 + x * 68.27 / 320;
+		int anglex = 2048 + x * 68.27 / 640;
+		//int anglex = x / 2 * 68.27 / 640;
 
-		/*for(int row = 0; row < mat.rows; ++row) {
-			uchar* p = mat.ptr(row);
-			for(int col = 0; col < mat.cols*3; ++col) {
-				if ((*p) % 3 == 2) //b
-					*p = 0;
-				//if (*p > 100)
-					//*p = 0;
-				 *p++;  //points to each pixel B,G,R value in turn assuming a CV_8UC3 color image 
-			}
-		}*/
-
-		/*cv::Mat_<cv::Vec3b> _mat = mat;
-		for (int i = 0; i < mat.cols; i++) {
-			for (int j = 0; j < mat.rows; j++) {
-				if (_mat[i, j])
-			}
-		}*/
-
-
-		//
-
-
-        //cvShowImage("Camera_Output", frame);   //Show image frames on created window
-		
-		//cvShowImage("Camera_Output", img);   //Show image frames on created window
 		cvShowImage("Camera_Output", frame);   //Show image frames on created window
-
 		cv::imshow("myimg", binpic);
-
-		//IplImage* binimg=cvCloneImage(&(IplImage)binpic);
-		//cvShowImage("Camera_Output2", binimg);   //Show image frames on created window
 
         key = cvWaitKey(10);     //Capture Keyboard stroke
         if (char(key) == 27){
             break;      //If you hit ESC key loop will break.
         }
-    }
+		
+		if (isTesting) {
+			//Sleep(10);
+			SP->WriteData("20482048", 8);
+			isTesting = false;
+		} else {
+			char str[4];
+			char result[8];
+			myitoa(anglex, str, 4);			
+			strcpy(result, str); 
+			strcat(result, "2048");
+
+			//printf("str%sstr", str);
+			//printf("result%sresult", result);
+			//SP->WriteData(result, 8);
+			
+			//printf("%s", result);
+			char *two = result;
+			printf("%s", two);
+			SP->WriteData(two, 8);
+		}
+
+	}
+
     cvReleaseCapture(&capture); //Release capture.
     cvDestroyWindow("Camera_Output"); //Destroy Window
 	//cvDestroyWindow("Camera_Output2"); //Destroy Window
+
+	return 0;
 }
 
-
-
-
-
-
+	
 Serial::Serial(char *portName)
 {
     //We're not yet connected
@@ -319,56 +335,3 @@ bool Serial::IsConnected()
  CloseHandle(hPort); //close the handle 
  return retVal; 
 } */
-
-
-
-// application reads from the specified serial port and reports the collected data
-/*int _tmain(int argc, _TCHAR* argv[])
-{
-	printf("Welcome to the serial test app!\n\n");
-
-	Serial* SP = new Serial("\\\\.\\COM10");    // adjust as needed
-
-	if (SP->IsConnected())
-		printf("We're connected");
-
-	char incomingData[256] = "";			// don't forget to pre-allocate memory
-	//printf("%s\n",incomingData);
-	int dataLength = 256;
-	int readResult = 0;
-
-
-	bool isTesting = true;
-
-	while(SP->IsConnected())
-	{
-		
-
-		readResult = SP->ReadData(incomingData, dataLength);
-		//printf("Bytes read: (-1 means no data available) %i\n",readResult);
-
-		std::string test(incomingData);
-		//printf("%s",incomingData);
-
-		if (test != "") {//my
-			//printf("Bytes read: (-1 means no data available) %i\n",readResult);
-			printf("%s", test);
-		}//
-		test = "";
-
-
-		Sleep(500); //20
-
-		if (isTesting) {
-			//SP->WriteData("8", 1);
-			//Sleep(10);
-			//SP->WriteData("15001500", 8);
-			SP->WriteData("20482048", 8);
-			isTesting = false;
-		}
-	}
-
-	
-
-	return 0;
-}*/
