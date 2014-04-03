@@ -122,7 +122,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		//int anglex = x * 68.27 / 640;
 		//int anglex = 2048 + x * 68.27 / 320;
-		int anglex = 2048 + x * 68.27 / 640;
+		//double k = 68.27;
+		double k = 455.11;
+		//int anglex = 2048 + x * k / 640;
+		int anglex = 2048 - x * k / 640;
 		//int anglex = x / 2 * 68.27 / 640;
 
 		cvShowImage("Camera_Output", frame);   //Show image frames on created window
@@ -138,20 +141,22 @@ int _tmain(int argc, _TCHAR* argv[])
 			SP->WriteData("20482048", 8);
 			isTesting = false;
 		} else {
-			char str[4];
-			char result[8];
-			myitoa(anglex, str, 4);			
-			strcpy(result, str); 
-			strcat(result, "2048");
+			if ((x != 0) && (y != 0)) {
+				char str[4];
+				char result[8];
+				myitoa(anglex, str, 4);			
+				strcpy(result, str); 
+				strcat(result, "2048");
 
-			//printf("str%sstr", str);
-			//printf("result%sresult", result);
-			//SP->WriteData(result, 8);
+				//printf("str%sstr", str);
+				//printf("result%sresult", result);
+				//SP->WriteData(result, 8);
 			
-			//printf("%s", result);
-			char *two = result;
-			printf("%s", two);
-			SP->WriteData(two, 8);
+				//printf("%s", result);
+				char *two = result;
+				printf("%s", two);
+				SP->WriteData(two, 8);
+			}
 		}
 
 	}
