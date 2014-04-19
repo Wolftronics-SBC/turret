@@ -18,6 +18,11 @@ int posX;
 int posY;
 boolean isReadSerial;
 
+int currentAngleX;
+int targetAngleX;
+int nextTargetAngleX;
+boolean isRotating;
+
 //char serialString[32];
 
 void setup(){
@@ -34,6 +39,14 @@ void setup(){
   posX = 0;
   posY = 0;
   isReadSerial = false;
+  
+  currentAngleX = 2048;
+  targetAngleX = 2048;
+  nextTargetAngleX = 2048;
+  isRotating = false;
+  
+  //
+  SetPosition(1, 2048); //move center
 }
 
 void ReadSerial()
@@ -60,19 +73,47 @@ void ReadSerial()
 void loop(){
   
   ReadSerial();
-  delay(20);
+  delay(50);
   
   if (isReadSerial) {
     Serial.println("Rotation!!! X");
     Serial.println(posX);
-    SetPosition(1, posX);
+    if (abs(posX - 2048) > 2) {
+      currentAngleX = ax12GetRegister(1, 36, 2);
+      //nextTargetAngleX = currentAngleX + stepAngle(posX - 2048);
+      nextTargetAngleX = currentAngleX + posX - 2048;
+      if ((nextTargetAngleX >= 1024) && (nextTargetAngleX <= 3072)) {    
+        Serial.println("nextTargetAngleX"); 
+        Serial.println(nextTargetAngleX); 
+        if (!isRotating) {
+          Serial.println("!isRotating");
+          isRotating = true;
+          targetAngleX = nextTargetAngleX;
+          if (abs(currentAngleX - targetAngleX) > 10) {
+            SetPosition(1, targetAngleX);
+          }
+        } 
+        if (abs(currentAngleX - targetAngleX) < 10) {
+          targetAngleX = nextTargetAngleX;
+          if (abs(currentAngleX - targetAngleX) > 10) {
+            SetPosition(1, targetAngleX);
+          }
+        }
+      }//if ((nextTargetAngleX >= 1024) && (nextTargetAngleX <= 3072))
+    }//if (abs(posX - 2048) > 10)
     
-    //Serial.println("Rotation!!! Y");
-    //Serial.println(posY);
-    //SetPosition(2, posY);    
+    Serial.println("Rotation!!! Y");
+    Serial.println(posY);
+    //SetPosition(2, posY); 
+    //delay(5000);
+  } else {
+    //isRotating = false;
   }
 }
 
+int stepAngle(int angle) {
+  return angle / 100;
+}
 
 void ScanServo(){
   id = 1;

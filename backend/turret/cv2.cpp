@@ -16,6 +16,8 @@
 
 #include <math.h>
 
+//#define DEBUG
+
 using namespace std;
 char key;
 
@@ -63,6 +65,10 @@ char* myitoa(int i, char b[], int l){
 // application reads from the specified serial port and reports the collected data
 int _tmain(int argc, _TCHAR* argv[])
 {	
+#ifndef DEBUG
+
+	long int debug_delay = 100;
+
 	//Arduino
 
 	printf("Welcome to the serial test app!\n\n");
@@ -84,9 +90,12 @@ int _tmain(int argc, _TCHAR* argv[])
 	cvNamedWindow("Camera_Output", 1);    //Create window
     CvCapture* capture = cvCaptureFromCAM(CV_CAP_ANY);  //Capture using any camera connected to your system
 
-
 	while(SP->IsConnected())
 	{
+		//debug
+		//debug_delay--;
+
+
 		//Arduino
 
 		readResult = SP->ReadData(incomingData, dataLength);
@@ -99,7 +108,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			//printf("%s", test);//
 		}//
 		test = "";
-		Sleep(20); //20 or 500
+		//Sleep(20); //20 or 500
 
 		//CV
 		IplImage* frame = cvQueryFrame(capture); //Create image frames from capture
@@ -123,10 +132,19 @@ int _tmain(int argc, _TCHAR* argv[])
 		//int anglex = x * 68.27 / 640;
 		//int anglex = 2048 + x * 68.27 / 320;
 		//double k = 68.27;
-		double k = 455.11;
-		//int anglex = 2048 + x * k / 640;
+		//double k = 200;
+		//double k = 455.11;
+		double k = 745;
+		//double k = 455.11;
+		//double k = 60;
+		//int anglex = 2048 - x * k / 640;
+		//anglex = anglex - x * k / 640;
 		int anglex = 2048 - x * k / 640;
+		/*double anglexd = 2048 - x * k / 640;
+		int anglex = anglexd;*/
 		//int anglex = x / 2 * 68.27 / 640;
+
+		
 
 		cvShowImage("Camera_Output", frame);   //Show image frames on created window
 		cv::imshow("myimg", binpic);
@@ -136,35 +154,85 @@ int _tmain(int argc, _TCHAR* argv[])
             break;      //If you hit ESC key loop will break.
         }
 		
-		if (isTesting) {
-			//Sleep(10);
-			SP->WriteData("20482048", 8);
-			isTesting = false;
-		} else {
-			if ((x != 0) && (y != 0)) {
-				char str[4];
-				char result[8];
-				myitoa(anglex, str, 4);			
-				strcpy(result, str); 
-				strcat(result, "2048");
+		//if (debug_delay == 0) {
+			//debug_delay = 100;
 
-				//printf("str%sstr", str);
-				//printf("result%sresult", result);
-				//SP->WriteData(result, 8);
+			if (isTesting) {
+				//Sleep(10);
+				//SP->WriteData("20482048", 8);
+				//SP->WriteData("20482048", 8);
+				isTesting = false;
+			} else {
+				if ((x != 0) && (y != 0)) {
+					char str[4];
+					char result[8];
+					//myitoa(anglex, str, 4);			
+					myitoa(anglex, str, 4);			
+					strcpy(result, str); 
+					strcat(result, "2048");
+
+					//printf("str%sstr", str);
+					//printf("result%sresult", result);
+					SP->WriteData(result, 8);
 			
-				//printf("%s", result);
-				char *two = result;
-				printf("%s", two);
-				SP->WriteData(two, 8);
+					//printf("%s", result);
+					char *two = result;
+					//printf("%s \n", two);
+					printf("x:\t%d\ta:\t%d\tresult:\t%s\n", x, anglex - 2048, two);
+					//SP->WriteData(two, 8);
+
+					//Sleep(200);
+					//Sleep(20);
+					Sleep(30);
+					//Sleep(300);
+				}
 			}
-		}
+
+		//}
 
 	}
-
-    cvReleaseCapture(&capture); //Release capture.
+	cvReleaseCapture(&capture); //Release capture.
     cvDestroyWindow("Camera_Output"); //Destroy Window
 	//cvDestroyWindow("Camera_Output2"); //Destroy Window
+#endif
+#ifdef DEBUG
+	cvNamedWindow("Camera_Output", 1);    //Create window
+    CvCapture* capture = cvCaptureFromCAM(CV_CAP_ANY);  //Capture using any camera connected to your system
 
+	///////test cv begin
+	while(1) {
+		IplImage* frame = cvQueryFrame(capture); //Create image frames from capture
+		cv::Mat mat(frame); 
+		cv::Mat binpic = cv::Mat::zeros(mat.rows, mat.cols, CV_32F);//binary pic
+		int x = 0;
+		int y = 0;
+		for(int i = 0; i < mat.rows; i++) {
+			for(int j = 0; j < mat.cols; j++) {
+				if ((mat.at<cv::Vec3b>(i,j)[0] > 150) && (mat.at<cv::Vec3b>(i,j)[0] < 250) &&
+					(mat.at<cv::Vec3b>(i,j)[1] > 170) && (mat.at<cv::Vec3b>(i,j)[1] < 250) && 
+					(mat.at<cv::Vec3b>(i,j)[2] > 218) && (mat.at<cv::Vec3b>(i,j)[2] <= 255)) {
+						binpic.at<float>(i,j) = 255;
+						x = j - mat.cols / 2;
+						y = i - mat.rows / 2;
+				}
+			} 
+		}
+		double k = 745;
+		int anglex = 2048 - x * k / 640;
+		printf("x:\t%d\ta:\t%d\ta:\t%d\n", x, anglex, anglex - 2048);
+		cvShowImage("Camera_Output", frame);   //Show image frames on created window
+		cv::imshow("myimg", binpic);
+
+		key = cvWaitKey(10);     //Capture Keyboard stroke
+        if (char(key) == 27){
+            break;      //If you hit ESC key loop will break.
+        }
+	}
+
+	cvReleaseCapture(&capture); //Release capture.
+    cvDestroyWindow("Camera_Output"); //Destroy Window
+	///////test cv end
+#endif
 	return 0;
 }
 
