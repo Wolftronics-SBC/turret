@@ -17,32 +17,12 @@
 #include <math.h>
 
 //#define DEBUG
-//#define RELEASE
-#define MOUSE_DEBUG
+#define RELEASE
+//#define MOUSE_DEBUG
 
 using namespace std;
 char waitkey;
 Serial* mySP;
-
-char* itoa(int i, char b[]){
-    char const digit[] = "0123456789";
-    char* p = b;
-    if(i<0){
-        *p++ = '-';
-        i *= -1;
-    }
-    int shifter = i;
-    do{ //Move to where representation ends
-        ++p;
-        shifter = shifter/10;
-    }while(shifter);
-    *p = '\0';
-    do{ //Move back, inserting digits as u go
-        *--p = digit[i%10];
-        i = i/10;
-    }while(i);
-    return b;
-}
 
 std::string fixedLength(int value, int digits = 3) {
     unsigned int uvalue = value;
@@ -78,59 +58,23 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata) {
 	}
 }
 
-// application reads from the specified serial port and reports the collected data
-int _tmain(int argc, _TCHAR* argv[])
-{	
+int _tmain(int argc, _TCHAR* argv[]) {	
 #ifdef RELEASE
-
-	long int debug_delay = 100;
-
-	//Arduino
-
-	printf("Welcome to the turret app!\n\n");
-
-	Serial* SP = new Serial("\\\\.\\COM10");    // adjust as needed
-
-	if (SP->IsConnected())
-		printf("We're connected");
-
-	char incomingData[256] = "";			// don't forget to pre-allocate memory
-	//printf("%s\n",incomingData);
+printf("Welcome to the turret app!\n");
+	mySP = new Serial("\\\\.\\COM10");
+	if (mySP->IsConnected()) {
+		printf("We're connected\n");
+	}
+	char incomingData[256] = "";			
 	int dataLength = 256;
 	int readResult = 0;
-
-
 	bool isTesting = true;
-
-	//CV
-	cvNamedWindow("Camera_Output", 1);    //Create window
-    CvCapture* capture = cvCaptureFromCAM(CV_CAP_ANY);  //Capture using any camera connected to your system
-
-	while(SP->IsConnected())
-	{
-		//debug
-		//debug_delay--;
-
-
-		//Arduino
-
-		readResult = SP->ReadData(incomingData, dataLength);
-		//printf("Bytes read: (-1 means no data available) %i\n",readResult);
-		std::string test(incomingData);
-		//printf("%s",incomingData);
-		if (test != "") {//my
-			//printf("Bytes read: (-1 means no data available) %i\n",readResult);
-			
-			//printf("%s", test);//
-		}//
-		test = "";
-		//Sleep(20); //20 or 500
-
-		//CV
-		IplImage* frame = cvQueryFrame(capture); //Create image frames from capture
+	cvNamedWindow("Camera_Output", 1);
+    CvCapture* capture = cvCaptureFromCAM(CV_CAP_ANY);
+	while (mySP->IsConnected()) {
+		IplImage* frame = cvQueryFrame(capture);
 		cv::Mat mat(frame); 
-		cv::Mat binpic = cv::Mat::zeros(mat.rows, mat.cols, CV_32F);//binary pic
-
+		cv::Mat binpic = cv::Mat::zeros(mat.rows, mat.cols, CV_32F);
 		int x = 0;
 		int y = 0;
 		for(int i = 0; i < mat.rows; i++) {
@@ -144,60 +88,27 @@ int _tmain(int argc, _TCHAR* argv[])
 				}
 			} 
 		}
-
-		//int anglex = x * 68.27 / 640;
-		//int anglex = 2048 + x * 68.27 / 320;
-		//double k = 68.27;
-		//double k = 200;
-		//double k = 455.11;
 		double k = 745;
-		//double k = 455.11;
-		//double k = 60;
-		//int anglex = 2048 - x * k / 640;
-		//anglex = anglex - x * k / 640;
 		int anglex = 2048 - x * k / 640;
-		/*double anglexd = 2048 - x * k / 640;
-		int anglex = anglexd;*/
-		//int anglex = x / 2 * 68.27 / 640;
-
-		
-
-		cvShowImage("Camera_Output", frame);   //Show image frames on created window
+		cvShowImage("Camera_Output", frame);   
 		cv::imshow("myimg", binpic);
-
-        key = cvWaitKey(10);     //Capture Keyboard stroke
-        if (char(key) == 27){
-            break;      //If you hit ESC key loop will break.
+        waitkey = cvWaitKey(10);     
+        if (char(waitkey) == 27){
+            break;      
         }
-		
-		//if (debug_delay == 0) {
-			//debug_delay = 100;
-
-			if (isTesting) {
-				//Sleep(10);
-				//SP->WriteData("20482048", 8);
-				//SP->WriteData("20482048", 8);
-				isTesting = false;
-			} else {
-				if ((x != 0) && (y != 0)) {
-					std::string str = fixedLength(anglex, 4) + "2048";
-					char * writable = new char[str.size() + 1];
-					std::copy(str.begin(), str.end(), writable);
-					writable[str.size()] = '\0';
-					//printf("(x, y) = (%d, %d)\tanglex = %d res = %s\n", x1, y1, anglex, writable);
-					printf("x:\t%d\ta:\t%d\tresult:\t%s\n", x, anglex - 2048, writable);
-					mySP->WriteData(writable, 8);
-					delete[] writable;
-					Sleep(30);					
-				}
-			}
-
-		//}
-
+		if ((x != 0) && (y != 0)) {
+			std::string str = fixedLength(anglex, 4) + "2048";
+			char * writable = new char[str.size() + 1];
+			std::copy(str.begin(), str.end(), writable);
+			writable[str.size()] = '\0';
+			printf("(x, y) = (%d, %d)\tanglex = %d res = %s\n", x, y, anglex - 2048, writable);
+			mySP->WriteData(writable, 8);
+			delete[] writable;
+			Sleep(30);	
+		}
 	}
-	cvReleaseCapture(&capture); //Release capture.
-    cvDestroyWindow("Camera_Output"); //Destroy Window
-	//cvDestroyWindow("Camera_Output2"); //Destroy Window
+	cvReleaseCapture(&capture); 
+    cvDestroyWindow("Camera_Output");
 #endif
 #ifdef DEBUG
 	cvNamedWindow("Camera_Output", 1);    //Create window
