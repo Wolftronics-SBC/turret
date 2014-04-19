@@ -252,9 +252,11 @@ int _tmain(int argc, _TCHAR* argv[])
 	while(mySP->IsConnected()) {
 		readResult = mySP->ReadData(incomingData, dataLength);
 		std::string test(incomingData);
-		if (test != "") {
-			printf("read: %s", test);
+		if (-1 != readResult) {
+			printf("read: %s\n", test);
 		}
+		test = "";
+		Sleep(150);
 		IplImage* frame = cvQueryFrame(capture); 
 		cvShowImage("Camera_Output", frame);  
 		waitkey = cvWaitKey(10);     

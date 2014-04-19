@@ -57,9 +57,10 @@ void ReadSerial()
   memset(&mas,0,sizeof(mas));
   while(Serial.available()>0)
   {
-   mas[i]=Serial.read();
+   mas[i] = Serial.read();
    i++;
    isReadSerial = true;
+   //delay(1);
   }
   if (isReadSerial)
   {
@@ -71,48 +72,52 @@ void ReadSerial()
 }
 
 void loop(){
-  
   ReadSerial();
-  delay(50);
-  
+  delay(100);
   if (isReadSerial) {
-    Serial.println("Rotation!!! X");
-    Serial.println(posX);
-    if (abs(posX - 2048) > 2) {
+    if (abs(posX - 2048) > 10) {
       currentAngleX = ax12GetRegister(1, 36, 2);
+      delay(1);
       //nextTargetAngleX = currentAngleX + stepAngle(posX - 2048);
       nextTargetAngleX = currentAngleX + posX - 2048;
-      if ((nextTargetAngleX >= 1024) && (nextTargetAngleX <= 3072)) {    
-        Serial.println("nextTargetAngleX"); 
-        Serial.println(nextTargetAngleX); 
+      /*if (nextTargetAngleX < 1024) {
+        nextTargetAngleX = 1024;
+      }
+      if (nextTargetAngleX > 3072) {
+        nextTargetAngleX = 3072;
+      }*/
+      if ((nextTargetAngleX >= 1024) && (nextTargetAngleX <= 3072)) {
         if (!isRotating) {
-          Serial.println("!isRotating");
           isRotating = true;
           targetAngleX = nextTargetAngleX;
           if (abs(currentAngleX - targetAngleX) > 10) {
             SetPosition(1, targetAngleX);
+            delay(3);
           }
         } 
         if (abs(currentAngleX - targetAngleX) < 10) {
           targetAngleX = nextTargetAngleX;
           if (abs(currentAngleX - targetAngleX) > 10) {
             SetPosition(1, targetAngleX);
+            delay(3);
           }
         }
       }//if ((nextTargetAngleX >= 1024) && (nextTargetAngleX <= 3072))
-    }//if (abs(posX - 2048) > 10)
-    
-    Serial.println("Rotation!!! Y");
-    Serial.println(posY);
-    //SetPosition(2, posY); 
-    //delay(5000);
-  } else {
-    //isRotating = false;
+    }//if (abs(posX - 2048) > 10)   
+    Serial.print("curAX: ");
+    Serial.print(currentAngleX, DEC);    
+    Serial.print(" posX: ");
+    Serial.print(posX, DEC);
+    Serial.print(" tAX: ");
+    Serial.print(targetAngleX, DEC);
+    Serial.print(" nTAX: ");
+    Serial.println(nextTargetAngleX, DEC);
   }
 }
 
 int stepAngle(int angle) {
-  return angle / 100;
+  //return angle / 10;
+  return angle / 2;
 }
 
 void ScanServo(){
