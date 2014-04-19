@@ -17,9 +17,12 @@
 #include <math.h>
 
 //#define DEBUG
+//#define RELEASE
+#define MOUSE_DEBUG
 
 using namespace std;
-char key;
+char waitkey;
+Serial* mySP;
 
 char* itoa(int i, char b[]){
     char const digit[] = "0123456789";
@@ -62,16 +65,79 @@ char* myitoa(int i, char b[], int l){
     return b;
 }
 
+std::string fixedLength(int value, int digits = 3) {
+    unsigned int uvalue = value;
+    if (value < 0) {
+        uvalue = -uvalue;
+    }
+    std::string result;
+    while (digits-- > 0) {
+        result += ('0' + uvalue % 10);
+        uvalue /= 10;
+    }
+    if (value < 0) {
+        result += '-';
+    }
+    std::reverse(result.begin(), result.end());
+    return result;
+}
+
+void CallBackFunc(int event, int x, int y, int flags, void* userdata) {
+	if (event == cv::EVENT_LBUTTONDOWN) {
+		
+		int x1 = x - 320;
+		int y1 = y - 240;
+		double k = 745;
+		int anglex = 2048 - x1 * k / 640;
+
+		
+		
+		/*char str[4] = "";
+		char result[8] = "";
+		myitoa(anglex, str, 4);	
+		//strcpy(result, str); 
+		strcat(result, str); 
+		strcat(result, "2048");		
+		char *two = result;
+		SP->WriteData(two, 8);
+		printf("x:\t%d\ta:\t%d\tresult:\t%s\n", x, anglex - 2048, two);*/
+		//*/
+
+		std::string str = fixedLength(anglex, 4) + "2048";
+		
+
+		/*char str[4];
+		char result[8];
+		myitoa(anglex, str, 4);			
+		strcpy(result, str); 
+		strcat(result, "2048");*/
+		//char *res = str.c_str();
+
+		char * writable = new char[str.size() + 1];
+		std::copy(str.begin(), str.end(), writable);
+		writable[str.size()] = '\0';
+
+		//printf("(x, y) = (%d, %d)\tanglex = %d res = %s\n", x1, y1, anglex, str.c_str());
+		printf("(x, y) = (%d, %d)\tanglex = %d res = %s\n", x1, y1, anglex, writable);
+		mySP->WriteData(writable, 8);
+		Sleep(30);
+
+
+		delete[] writable;
+		
+	}
+}
+
 // application reads from the specified serial port and reports the collected data
 int _tmain(int argc, _TCHAR* argv[])
 {	
-#ifndef DEBUG
+#ifdef RELEASE
 
 	long int debug_delay = 100;
 
 	//Arduino
 
-	printf("Welcome to the serial test app!\n\n");
+	printf("Welcome to the turret app!\n\n");
 
 	Serial* SP = new Serial("\\\\.\\COM10");    // adjust as needed
 
@@ -232,6 +298,26 @@ int _tmain(int argc, _TCHAR* argv[])
 	cvReleaseCapture(&capture); //Release capture.
     cvDestroyWindow("Camera_Output"); //Destroy Window
 	///////test cv end
+#endif
+#ifdef MOUSE_DEBUG
+	printf("Welcome to the turret app!\n");
+	mySP = new Serial("\\\\.\\COM10");    // adjust as needed
+	if (mySP->IsConnected()) {
+		printf("We're connected\n");
+	}
+	cvNamedWindow("Camera_Output", 1);    
+    CvCapture* capture = cvCaptureFromCAM(CV_CAP_ANY);  
+	cv::setMouseCallback("Camera_Output", CallBackFunc, NULL);
+	while(mySP->IsConnected()) {
+		IplImage* frame = cvQueryFrame(capture); 
+		cvShowImage("Camera_Output", frame);  
+		waitkey = cvWaitKey(10);     
+        if (char(waitkey) == 27){
+            break;      
+        }
+	}
+	cvReleaseCapture(&capture); 
+    cvDestroyWindow("Camera_Output"); 
 #endif
 	return 0;
 }
