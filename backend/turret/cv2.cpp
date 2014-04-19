@@ -44,27 +44,6 @@ char* itoa(int i, char b[]){
     return b;
 }
 
-char* myitoa(int i, char b[], int l){
-    char const digit[] = "0123456789";
-    char* p = b;
-	
-	for (int j = 0; j < l; j++) {
-		++p;
-	}
-	
-    *p = '\0';
-	for (int j = 0; j < l; j++) {
-		if (i % 10 != 0) {
-			*--p = digit[i % 10];
-			i = i / 10;	
-		} else {
-			*--p = digit[0];
-		}
-	}
-
-    return b;
-}
-
 std::string fixedLength(int value, int digits = 3) {
     unsigned int uvalue = value;
     if (value < 0) {
@@ -83,48 +62,19 @@ std::string fixedLength(int value, int digits = 3) {
 }
 
 void CallBackFunc(int event, int x, int y, int flags, void* userdata) {
-	if (event == cv::EVENT_LBUTTONDOWN) {
-		
+	if (event == cv::EVENT_LBUTTONDOWN) {		
 		int x1 = x - 320;
 		int y1 = y - 240;
 		double k = 745;
 		int anglex = 2048 - x1 * k / 640;
-
-		
-		
-		/*char str[4] = "";
-		char result[8] = "";
-		myitoa(anglex, str, 4);	
-		//strcpy(result, str); 
-		strcat(result, str); 
-		strcat(result, "2048");		
-		char *two = result;
-		SP->WriteData(two, 8);
-		printf("x:\t%d\ta:\t%d\tresult:\t%s\n", x, anglex - 2048, two);*/
-		//*/
-
 		std::string str = fixedLength(anglex, 4) + "2048";
-		
-
-		/*char str[4];
-		char result[8];
-		myitoa(anglex, str, 4);			
-		strcpy(result, str); 
-		strcat(result, "2048");*/
-		//char *res = str.c_str();
-
 		char * writable = new char[str.size() + 1];
 		std::copy(str.begin(), str.end(), writable);
 		writable[str.size()] = '\0';
-
-		//printf("(x, y) = (%d, %d)\tanglex = %d res = %s\n", x1, y1, anglex, str.c_str());
 		printf("(x, y) = (%d, %d)\tanglex = %d res = %s\n", x1, y1, anglex, writable);
 		mySP->WriteData(writable, 8);
-		Sleep(30);
-
-
 		delete[] writable;
-		
+		Sleep(30);		
 	}
 }
 
@@ -230,27 +180,15 @@ int _tmain(int argc, _TCHAR* argv[])
 				isTesting = false;
 			} else {
 				if ((x != 0) && (y != 0)) {
-					char str[4];
-					char result[8];
-					//myitoa(anglex, str, 4);			
-					myitoa(anglex, str, 4);			
-					strcpy(result, str); 
-					strcat(result, "2048");
-
-					//printf("str%sstr", str);
-					//printf("result%sresult", result);
-					SP->WriteData(result, 8);
-			
-					//printf("%s", result);
-					char *two = result;
-					//printf("%s \n", two);
-					printf("x:\t%d\ta:\t%d\tresult:\t%s\n", x, anglex - 2048, two);
-					//SP->WriteData(two, 8);
-
-					//Sleep(200);
-					//Sleep(20);
-					Sleep(30);
-					//Sleep(300);
+					std::string str = fixedLength(anglex, 4) + "2048";
+					char * writable = new char[str.size() + 1];
+					std::copy(str.begin(), str.end(), writable);
+					writable[str.size()] = '\0';
+					//printf("(x, y) = (%d, %d)\tanglex = %d res = %s\n", x1, y1, anglex, writable);
+					printf("x:\t%d\ta:\t%d\tresult:\t%s\n", x, anglex - 2048, writable);
+					mySP->WriteData(writable, 8);
+					delete[] writable;
+					Sleep(30);					
 				}
 			}
 
@@ -301,14 +239,22 @@ int _tmain(int argc, _TCHAR* argv[])
 #endif
 #ifdef MOUSE_DEBUG
 	printf("Welcome to the turret app!\n");
-	mySP = new Serial("\\\\.\\COM10");    // adjust as needed
+	mySP = new Serial("\\\\.\\COM10");
 	if (mySP->IsConnected()) {
 		printf("We're connected\n");
 	}
+	char incomingData[256] = "";			
+	int dataLength = 256;
+	int readResult = 0;
 	cvNamedWindow("Camera_Output", 1);    
     CvCapture* capture = cvCaptureFromCAM(CV_CAP_ANY);  
 	cv::setMouseCallback("Camera_Output", CallBackFunc, NULL);
 	while(mySP->IsConnected()) {
+		readResult = mySP->ReadData(incomingData, dataLength);
+		std::string test(incomingData);
+		if (test != "") {
+			printf("read: %s", test);
+		}
 		IplImage* frame = cvQueryFrame(capture); 
 		cvShowImage("Camera_Output", frame);  
 		waitkey = cvWaitKey(10);     
